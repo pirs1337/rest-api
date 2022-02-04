@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
@@ -31,17 +32,30 @@ class PostController extends Controller
     public function store(Request $request)
     {
         
-        $validated = $this->validatePost($request);
         $user = User::getUserByBearerToken($request);
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|max:255|string|not_in:public,posts,post',
+            'text' =>  'required|string',
+            'img' => 'image',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendValidationError($validator);
+        }
+
+        $validated = $validator->validated();
 
         if ($user) {
             $data = array_merge(['user_id' => $user->id], $validated);
 
+            $post = Post::create($data);
+
             if(isset($data['img'])){
-                $data['img'] = ImgController::uploadImg(self::DIR, $data['title'], $data['img']);
+               $post->img = $data['img'] = ImgController::uploadImg(self::DIR, $data['title'].'-'.$post->id, $data['img']);
+               $post->save();
             }
 
-            $post = Post::create($data);
             return $this->sendSuccess(['status' => true, 'data' => new PostResource($post)]);
         }
         
@@ -72,7 +86,60 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
-        
+        $post = $this->getPost($id);
+
+        if(!$post) {
+            return $this->sendError(['msg' => 'Post not found'], 404);
+        }
+    
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|max:255|string|not_in:public,posts,post',
+            'text' =>  'required|string',
+            'img' => 'image',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendValidationError($validator);
+        }
+
+        $validated = $validator->validated();
+
+        //update dir if new title 
+
+        $post_id = '-'.$post->id;
+
+        if ($post->title != $validated['title']) {
+            if ($post->img && !isset($validated['img'])) {
+            
+                //change folder
+                $newPath = str_replace($post->title, $validated['title'], $post->img);
+
+                //move img and delete old dir
+                ImgController::moveImg(self::DIR.$post->title.$post_id, self::DIR.$validated['title'].$post_id);
+                ImgController::deleteDir(self::DIR.$post->title.$post_id);
+
+                $post->img = $newPath;
+            
+            }
+        }
+
+        if (isset($validated['img'])) {
+            if ($post->img) {
+                //delete old dir
+                ImgController::deleteDir(self::DIR.$post->title.'-'.$post->id);
+            }
+         
+            $path = ImgController::uploadImg(self::DIR, $validated['title'].$post_id, $validated['img']);
+
+            $post->img = $path;
+            $post->save();
+        }
+
+        $post->title = $validated['title'];
+        $post->text = $validated['text'];
+        $post->save();
+
+        return $this->sendSuccess(['msg' => 'Post updated']);
     }
 
     /**
@@ -86,19 +153,13 @@ class PostController extends Controller
         //
     }
 
-    private function validatePost($request){
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|max:255|string',
-            'text' =>  'required|string',
-            'img' => 'image',
-        ]);
+    public function getPost($id){
+        $post = Post::find($id);
 
-        if ($validator->fails()) {
-            return $this->sendValidationError($validator);
-        }
+        if ($post) {
+            return $post;
+        } 
 
-        $validated = $validator->validated();
-
-        return $validated;
+        return false;
     }
 }
