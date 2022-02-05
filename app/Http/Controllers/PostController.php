@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Post\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
     const DIR = 'posts/';
+
 
     /**
      * Display a listing of the resource.
@@ -29,29 +28,18 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(PostRequest $request)
     {
-        
         $user = User::getUserByBearerToken($request);
 
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|max:255|string|not_in:public,posts,post',
-            'text' =>  'required|string',
-            'img' => 'image',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendValidationError($validator);
-        }
-
-        $validated = $validator->validated();
+        $validated = $request->validated();
 
         if ($user) {
             $data = array_merge(['user_id' => $user->id], $validated);
 
             $post = Post::create($data);
 
-            if(isset($data['img'])){
+            if (isset($data['img'])) {
                $post->img = $data['img'] = ImgController::uploadImg(self::DIR, $data['title'].'-'.$post->id, $data['img']);
                $post->save();
             }
@@ -69,12 +57,14 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        $post = Post::find($id);
-        if ($post) {
-           return $this->sendSuccess(['post' => new PostResource($post)]);
+        $post = $this->getPost($id);
+
+        if(!$post) {
+            return $this->postNotFound();
         }
 
-        return $this->sendError(['msg' => 'Not found'], 404);
+        return $this->sendSuccess(['post' => new PostResource($post)]);
+
     }
 
     /**
@@ -84,25 +74,15 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(PostRequest $request, $id)
     {
         $post = $this->getPost($id);
 
         if(!$post) {
-            return $this->sendError(['msg' => 'Post not found'], 404);
+            return $this->postNotFound();
         }
     
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|max:255|string|not_in:public,posts,post',
-            'text' =>  'required|string',
-            'img' => 'image',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendValidationError($validator);
-        }
-
-        $validated = $validator->validated();
+        $validated = $request->validated();
 
         //update dir if new title 
 
@@ -115,21 +95,34 @@ class PostController extends Controller
                 $newPath = str_replace($post->title, $validated['title'], $post->img);
 
                 //move img and delete old dir
-                ImgController::moveImg(self::DIR.$post->title.$post_id, self::DIR.$validated['title'].$post_id);
-                ImgController::deleteDir(self::DIR.$post->title.$post_id);
+                $move = ImgController::moveImg(self::DIR.$post->title.$post_id, self::DIR.$validated['title'].$post_id);
+                if ($move) {
+                    $deleteDir =  ImgController::deleteDir(self::DIR.$post->title.$post_id);
 
+                    if (!$deleteDir) {
+                        return $this->error();
+                    }
+                }
+               
                 $post->img = $newPath;
-            
             }
         }
 
         if (isset($validated['img'])) {
             if ($post->img) {
                 //delete old dir
-                ImgController::deleteDir(self::DIR.$post->title.'-'.$post->id);
+                $deleteDir = ImgController::deleteDir(self::DIR.$post->title.$post_id);
+
+                if (!$deleteDir) {
+                    return $this->error();
+                }
             }
          
             $path = ImgController::uploadImg(self::DIR, $validated['title'].$post_id, $validated['img']);
+
+            if (!$path) {
+                return $this->error();
+            }
 
             $post->img = $path;
             $post->save();
@@ -150,7 +143,22 @@ class PostController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $post = $this->getPost($id);
+
+        if (!$post) {
+            return $this->postNotFound();
+        }
+
+        if ($post->img) {
+            $deleteDir = ImgController::deleteDir(self::DIR.$post->title.'-'.$post->id);
+
+            if (!$deleteDir) {
+                return $this->error();
+            }
+        }
+
+        $post->delete();
+        return $this->sendSuccess(['msg' => 'Post deleted']);
     }
 
     public function getPost($id){
@@ -161,5 +169,15 @@ class PostController extends Controller
         } 
 
         return false;
+    }
+
+    private function postNotFound(){
+        return $this->sendError(['msg' => 'Post not found'], 404);
+    }
+
+    private function error(){
+        return $this->sendError([
+            'msg' => 'Unexpected error',
+        ], 500);
     }
 }
