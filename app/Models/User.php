@@ -58,6 +58,8 @@ class User extends Authenticatable
         return false; 
     }
 
+    
+
     // public static function changeUserBearerToken($request){
     //     $user = self::getUserByBearerToken($request);
     //     $user->generateBearerToken();

@@ -12,6 +12,11 @@ class PostController extends Controller
     const DIR = 'posts/';
 
 
+    public function __construct()
+    {
+        $this->middleware('auth.by.bearer', ['except' => ['index']]);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -44,9 +49,8 @@ class PostController extends Controller
                $post->save();
             }
 
-            return $this->sendSuccess(['status' => true, 'data' => new PostResource($post)]);
+            return $this->sendSuccess(['post' => new PostResource($post)]);
         }
-        
     }
 
     /**
@@ -96,12 +100,8 @@ class PostController extends Controller
 
                 //move img and delete old dir
                 $move = ImgController::moveImg(self::DIR.$post->title.$post_id, self::DIR.$validated['title'].$post_id);
-                if ($move) {
-                    $deleteDir =  ImgController::deleteDir(self::DIR.$post->title.$post_id);
-
-                    if (!$deleteDir) {
-                        return $this->error();
-                    }
+                if (!$move) {
+                    return $this->error();
                 }
                
                 $post->img = $newPath;

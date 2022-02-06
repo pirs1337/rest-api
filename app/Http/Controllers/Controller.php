@@ -11,19 +11,7 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    protected function sendValidationError($validator){
-        $data = [
-            'error' => [
-                'status' => false,
-                'msg' => 'Validation Error',
-                'errors' => $validator->errors() 
-            ]
-        ];
-
-        return response()->json($data, 422);
-    }
-
-    protected function sendSuccess($arr = [], $code = 200){
+    public function sendSuccess($arr = [], $code = 200){
         $data = [
             'status' => true
         ];
@@ -66,6 +54,6 @@ class Controller extends BaseController
     }
 
     public static function formateDateToDmY($date){
-       return date('d-m-Y', strtotime($date));
+       return date('d.m.Y', strtotime($date));
     }
 }

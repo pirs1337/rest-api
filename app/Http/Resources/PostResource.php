@@ -3,7 +3,10 @@
 namespace App\Http\Resources;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\ImgController;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
+use App\Models\User;
 
 class PostResource extends JsonResource
 {
@@ -20,14 +23,9 @@ class PostResource extends JsonResource
                'user_id' => $this->user_id,
                'title' => $this->title,
                'text' => $this->text,
-                $this->mergeWhen($this->img, [
-                    'img' => $this->img,
-                ]),
-                'created_at' => Controller::formateDateToDmY($this->created_at),
-                $this->mergeWhen($this->created_at != $this->updated_at, [
-                'updated_at' => Controller::formateDateToDmY($this->updated_at),
-            ]),
-                
+               'img' => $this->when($this->img, ImgController::getFullPathImg($this->img)),
+               'created_at' => Controller::formateDateToDmY($this->created_at),
+               'updated_at' => $this->when($this->created_at != $this->updated_at, Controller::formateDateToDmY($this->updated_at))
         ];
     }
 }

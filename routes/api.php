@@ -23,4 +23,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'authenticate']);
 
-Route::apiResource('posts', PostController::class)->middleware('auth.by.bearer');
+Route::apiResource('posts', PostController::class);
