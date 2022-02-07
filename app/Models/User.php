@@ -58,12 +58,15 @@ class User extends Authenticatable
         return false; 
     }
 
-    
+    public static function thisUser($request, $user_id){
+        $user = self::getUserByBearerToken($request);
 
-    // public static function changeUserBearerToken($request){
-    //     $user = self::getUserByBearerToken($request);
-    //     $user->generateBearerToken();
-    // }
+        if ($user->id == $user_id) {
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * The attributes that should be cast.

@@ -6,6 +6,7 @@ use App\Http\Requests\Post\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
@@ -85,6 +86,12 @@ class PostController extends Controller
         if(!$post) {
             return $this->postNotFound();
         }
+
+        $user = User::thisUser($request, $post->user_id);
+
+        if (!$user) {
+            return $this->sendAccessDenied();
+        }
     
         $validated = $request->validated();
 
@@ -141,12 +148,18 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
         $post = $this->getPost($id);
 
         if (!$post) {
             return $this->postNotFound();
+        }
+
+        $user = User::thisUser($request, $post->user_id);
+
+        if (!$user) {
+            return $this->sendAccessDenied();
         }
 
         if ($post->img) {

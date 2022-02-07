@@ -46,6 +46,17 @@ class Controller extends BaseController
         $data = [
             'error' => [
                 'status' => false,
+                'msg' => 'Unauthorize'
+            ]
+        ];
+
+        return response()->json($data, 401);
+    }
+
+    public function sendAccessDenied(){
+        $data = [
+            'error' => [
+                'status' => false,
                 'msg' => 'Access denied'
             ]
         ];
