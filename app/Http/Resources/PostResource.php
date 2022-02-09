@@ -5,8 +5,6 @@ namespace App\Http\Resources;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ImgController;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 
 class PostResource extends JsonResource
 {

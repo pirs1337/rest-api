@@ -25,7 +25,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        return $this->sendSuccess(['posts' => PostResource::collection(Post::all())]);
+        return $this->sendSuccess(['data' => PostResource::collection(Post::all())]);
     }
 
     /**
@@ -50,7 +50,7 @@ class PostController extends Controller
                $post->save();
             }
 
-            return $this->sendSuccess(['post' => new PostResource($post)]);
+            return $this->sendSuccess(['data' => new PostResource($post)]);
         }
     }
 
@@ -68,7 +68,7 @@ class PostController extends Controller
             return $this->postNotFound();
         }
 
-        return $this->sendSuccess(['post' => new PostResource($post)]);
+        return $this->sendSuccess(['data' => new PostResource($post)]);
 
     }
 

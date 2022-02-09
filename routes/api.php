@@ -26,4 +26,7 @@ Route::post('/login', [AuthController::class, 'authenticate']);
 
 Route::apiResource('posts', PostController::class);
 
+Route::get('/user/posts/{id}', [UserController::class, 'getUserPosts']);
+
 Route::get('/user/{id}', [UserController::class, 'getUserById']);
+Route::get('/user/token/{token}', [UserController::class, 'getUserByToken']);

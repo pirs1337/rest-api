@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\AuthRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request){
 
         $validated = $request->validated();
+
         $validated['password'] = Hash::make($validated['password']);
 
         if (isset($validated['avatar'])) {
@@ -36,6 +38,6 @@ class AuthController extends Controller
             return $this->sendSuccess(['token' => $token]);
         }
 
-        return $this->sendError(['msg' => 'Incorrect login or password']);
+        return $this->sendError(['password' => 'Incorrect login or password']);
     }
 }
