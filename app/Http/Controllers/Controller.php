@@ -42,11 +42,11 @@ class Controller extends BaseController
         return response()->json($data, $code);
     }
 
-    public function sendUnauthorize(){
+    public function sendUnauthorized(){
         $data = [
             'error' => [
                 'status' => false,
-                'msg' => 'Unauthorize'
+                'msg' => 'Unauthorized'
             ]
         ];
 
@@ -61,7 +61,7 @@ class Controller extends BaseController
             ]
         ];
 
-        return response()->json($data, 401);
+        return response()->json($data, 403);
     }
 
     public static function formateDateToDmY($date){

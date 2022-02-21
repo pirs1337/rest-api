@@ -7,6 +7,7 @@ use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -15,7 +16,7 @@ class PostController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth.by.bearer', ['except' => ['index']]);
+        $this->middleware('auth:api', ['except' => ['index', 'show']]);
     }
 
     /**
@@ -36,12 +37,9 @@ class PostController extends Controller
      */
     public function store(PostRequest $request)
     {
-        $user = User::getUserByBearerToken($request);
-
         $validated = $request->validated();
 
-        if ($user) {
-            $data = array_merge(['user_id' => $user->id], $validated);
+            $data = array_merge(['user_id' => Auth::id()], $validated);
 
             $post = Post::create($data);
 
@@ -51,7 +49,6 @@ class PostController extends Controller
             }
 
             return $this->sendSuccess(['data' => new PostResource($post)]);
-        }
     }
 
     /**
@@ -87,9 +84,7 @@ class PostController extends Controller
             return $this->postNotFound();
         }
 
-        $user = User::thisUser($request, $post->user_id);
-
-        if (!$user) {
+        if (!User::thisUser($post->user_id)) {
             return $this->sendAccessDenied();
         }
     
@@ -139,7 +134,7 @@ class PostController extends Controller
         $post->text = $validated['text'];
         $post->save();
 
-        return $this->sendSuccess(['msg' => 'Post updated']);
+        return $this->sendSuccess(['msg' => 'Post updated', 'data' => new PostResource($post)]);
     }
 
     /**
@@ -156,9 +151,7 @@ class PostController extends Controller
             return $this->postNotFound();
         }
 
-        $user = User::thisUser($request, $post->user_id);
-
-        if (!$user) {
+        if (!User::thisUser($post->user_id)) {
             return $this->sendAccessDenied();
         }
 

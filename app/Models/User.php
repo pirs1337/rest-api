@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -39,29 +39,9 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
-    public function generateBearerToken(){
-        $token = Str::random(80);
-        $this->api_token = $token;
-        $this->save();
-        return $token;
-    }
-
-    public static function getUserByBearerToken($request, $token = false){
-        if (!$token) {
-            $token = $request->bearerToken();
-        }
-        $user = User::where('api_token', $token)->first();
-        if ($user) {
-            return $user;
-        }
-
-        return false; 
-    }
-
-    public static function thisUser($request, $user_id){
-        $user = self::getUserByBearerToken($request);
-
-        if ($user->id == $user_id) {
+    public static function thisUser($user_id){
+        
+        if (Auth::id() == $user_id) {
             return true;
         }
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\AuthRequest;
 use App\Http\Requests\Auth\RegisterRequest;
-use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -34,7 +33,7 @@ class AuthController extends Controller
         $validated = $request->validated();
 
         if (Auth::attempt($validated)) {;
-            $token = $request->user()->generateBearerToken();
+            $token = ApiTokenController::update($request);
             return $this->sendSuccess(['token' => $token]);
         }
 
