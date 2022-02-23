@@ -48,7 +48,7 @@ class PostController extends Controller
                $post->save();
             }
 
-            return $this->sendSuccess(['data' => new PostResource($post)]);
+            return $this->sendSuccess(['msg' => 'Post created', 'data' => new PostResource($post)]);
     }
 
     /**
